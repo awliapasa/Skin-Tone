@@ -8,7 +8,7 @@ def skinTone_detector(image_data):
     img = img.resize((200, 200))
 
     # Mengambil ROI
-    height, width, _ = img.size
+    width, height = img.size
     left = width // 4
     top = height // 4
     right = left + width // 2
