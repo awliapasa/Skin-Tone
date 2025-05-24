@@ -23,9 +23,10 @@ def skinTone_detector(image_data):
     d = cmax-cmin
 
     hue = np.zeros_like(cmax)
-    hue[(cmax == r)] = (((g - b) / d) % 6)[cmax == r]
-    hue[(cmax == g)] = (((b - r) / d) + 2)[cmax == g]
-    hue[(cmax == b)] = (((r - g) / d) + 4)[cmax == b]
+    with np.errstate(divide='ignore', invalid='ignore'):
+        hue[(cmax == r) & (d != 0)] = (((g - b) / d) % 6)[(cmax == r) & (d != 0)]
+        hue[(cmax == g) & (d != 0)] = (((b - r) / d) + 2)[(cmax == g) & (d != 0)]
+        hue[(cmax == b) & (d != 0)] = (((r - g) / d) + 4)[(cmax == b) & (d != 0)]
     hue *= 60
     hue = np.nan_to_num(hue)
 
