@@ -38,9 +38,9 @@ def skinTone_detector(image_data):
     saturation = np.where(cmax == 0, 0, d / cmax)
     value = cmax
 
-    avg_h = np.mean(hue)
-    avg_s = np.mean(saturation) * 255
-    avg_v = np.mean(value) * 255
+    avg_h = np.median(hue)
+    avg_s = np.median(saturation) * 255
+    avg_v = np.median(value) * 255
 
     st.write(f"HSV rata-rata: H={avg_h:.2f}, S={avg_s:.2f}, V={avg_v:.2f}")
 
@@ -181,3 +181,5 @@ if (selected=='Detector Site'):
                 st.image(f"images/{skin}/Foundation/Foundation.jpg", caption="Foundation", use_container_width=True)
             with col3:
                 st.image(f"images/{skin}/Lipstick/Lipstick.jpg", caption="Lipstick", use_container_width=True)
+
+
