@@ -1,20 +1,40 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import cv2
 import numpy as np
 from PIL import Image
 
 def skinTone_detector(image_data):
     img = Image.open(image_data).convert("RGB")
-    img = np.array(img)
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    img = img.resize((200, 200))
 
-    h, w, _ = img.shape
-    roi = img[h//4:3*h//4, w//4:3*w//4]
+    # Mengambil ROI
+    height, width, _ = img.size
+    left = width // 4
+    top = height // 4
+    right = left + width // 2
+    bottom = top + height // 2
+    cropped_img = img.crop((left, top, right, bottom))
 
-    avg_h = np.mean(roi[:, :, 0])
-    avg_s = np.mean(roi[:, :, 1])
-    avg_v = np.mean(roi[:, :, 2])
+    # Konversi RGB ke HSV
+    cropped_arr = np.array(cropped_img) / 255.0
+    r, g, b = cropped_arr[:, :, 0], cropped_arr[:, :, 1], cropped_arr[:, :, 2]
+    cmax = np.max(cropped_arr, axis=2)
+    cmin = np.min(cropped_arr, axis=2)
+    d = cmax-cmin
+
+    hue = np.zeros_like(cmax)
+    hue[(cmax == r)] = (((g - b) / d) % 6)[cmax == r]
+    hue[(cmax == g)] = (((b - r) / d) + 2)[cmax == g]
+    hue[(cmax == b)] = (((r - g) / d) + 4)[cmax == b]
+    hue *= 60
+    hue = np.nan_to_num(hue)
+
+    saturation = np.where(cmax == 0, 0, d / cmax)
+    value = cmax
+
+    avg_h = np.mean(hue)
+    avg_s = np.mean(saturation) * 255
+    avg_v = np.mean(value) * 255
 
     if 0 <= avg_h <= 50 and 10 <= avg_s <= 60 and 80 <avg_v <= 255:
         return "FAIR"
@@ -153,5 +173,3 @@ if (selected=='Detector Site'):
                 st.image(f"images\{skin}\Foundation\Foundation.jpg", caption="Foundation", use_container_width=True)
             with col3:
                 st.image(f"images\{skin}\Lipstick\Lipstick.jpg", caption="Lipstick", use_container_width=True)
-
-
