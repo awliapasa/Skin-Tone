@@ -171,7 +171,6 @@ if (selected=='Detector Site'):
         if skin == "An Unknown Skin Tone":
             st.warning("Please try again with clearer photo!")
         else:
-            st.image(f"images/{skin}.jpg", caption=f"{st.session_state.result} Skin Tone", use_container_width=True)
             st.text('Your Color Palette Makeup Recommendation:')
             
             col1, col2, col3 = st.columns(3, gap='medium')
@@ -181,5 +180,3 @@ if (selected=='Detector Site'):
                 st.image(f"images/{skin}/Foundation/Foundation.jpg", caption="Foundation", use_container_width=True)
             with col3:
                 st.image(f"images/{skin}/Lipstick/Lipstick.jpg", caption="Lipstick", use_container_width=True)
-
-
