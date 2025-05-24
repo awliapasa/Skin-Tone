@@ -175,8 +175,8 @@ if (selected=='Detector Site'):
             
             col1, col2, col3 = st.columns(3, gap='medium')
             with col1:
-                st.image(f"images/{skin}/Blush/Blush.jpg", caption="Blush", use_container_width=True)
+                st.image(f"images/{skin}/Blush/Blush.png", caption="Blush", use_container_width=True)
             with col2:
-                st.image(f"images/{skin}/Foundation/Foundation.jpg", caption="Foundation", use_container_width=True)
+                st.image(f"images/{skin}/Foundation/Foundation.png", caption="Foundation", use_container_width=True)
             with col3:
-                st.image(f"images/{skin}/Lipstick/Lipstick.jpg", caption="Lipstick", use_container_width=True)
+                st.image(f"images/{skin}/Lipstick/Lipstick.png", caption="Lipstick", use_container_width=True)
