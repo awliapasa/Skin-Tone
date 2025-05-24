@@ -24,9 +24,14 @@ def skinTone_detector(image_data):
 
     hue = np.zeros_like(cmax)
     with np.errstate(divide='ignore', invalid='ignore'):
-        hue[(cmax == r) & (d != 0)] = (((g - b) / d) % 6)[(cmax == r) & (d != 0)]
-        hue[(cmax == g) & (d != 0)] = (((b - r) / d) + 2)[(cmax == g) & (d != 0)]
-        hue[(cmax == b) & (d != 0)] = (((r - g) / d) + 4)[(cmax == b) & (d != 0)]
+        mask_r = (cmax == r) & (d != 0)
+        mask_g = (cmax == g) & (d != 0) 
+        mask_b = (cmax == b) & (d != 0)
+ 
+        hue[mask_r] = (((g - b) / d) % 6)[mask_r]
+        hue[mask_g] = (((b - r) / d) + 2)[mask_g]
+        hue[mask_b] = (((r - g) / d) + 4)[mask_b]
+    
     hue *= 60
     hue = np.nan_to_num(hue)
 
@@ -36,6 +41,8 @@ def skinTone_detector(image_data):
     avg_h = np.mean(hue)
     avg_s = np.mean(saturation) * 255
     avg_v = np.mean(value) * 255
+
+    st.write(f"HSV rata-rata: H={avg_h:.2f}, S={avg_s:.2f}, V={avg_v:.2f}")
 
     if 0 <= avg_h <= 50 and 10 <= avg_s <= 60 and 80 <avg_v <= 255:
         return "FAIR"
@@ -169,8 +176,8 @@ if (selected=='Detector Site'):
             
             col1, col2, col3 = st.columns(3, gap='medium')
             with col1:
-                st.image(f"images\{skin}\Blush\Blush.jpg", caption="Blush", use_container_width=True)
+                st.image(f"images/{skin}/Blush/Blush.jpg", caption="Blush", use_container_width=True)
             with col2:
-                st.image(f"images\{skin}\Foundation\Foundation.jpg", caption="Foundation", use_container_width=True)
+                st.image(f"images/{skin}/Foundation/Foundation.jpg", caption="Foundation", use_container_width=True)
             with col3:
-                st.image(f"images\{skin}\Lipstick\Lipstick.jpg", caption="Lipstick", use_container_width=True)
+                st.image(f"images/{skin}/Lipstick/Lipstick.jpg", caption="Lipstick", use_container_width=True)
