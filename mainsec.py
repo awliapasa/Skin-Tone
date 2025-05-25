@@ -98,7 +98,7 @@ def go_to_result():
 with st.sidebar:
     selected = option_menu('Skin Tone Detector',
                             ['Description Site',
-                            'Detector Site'],
+                            'Detector Site', 'Developers Profile'],
                             default_index=0)
 
 # halaman deskripsi
@@ -180,3 +180,7 @@ if (selected=='Detector Site'):
                 st.image(f"images/{skin}/Foundation/Foundation.png", caption="Foundation", use_container_width=True)
             with col3:
                 st.image(f"images/{skin}/Lipstick/Lipstick.png", caption="Lipstick", use_container_width=True)
+
+if (selected == 'Developers Profile'):
+    st.markdown("<h1 style='text-align: center;'>Meet the team!</h1>", unsafe_allow_html=True)
+    st.image(f"images/Teams.jpg")
