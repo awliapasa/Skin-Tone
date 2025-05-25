@@ -184,3 +184,10 @@ if (selected=='Detector Site'):
 if (selected == 'Developers Profile'):
     st.markdown("<h1 style='text-align: center;'>Meet the team!</h1>", unsafe_allow_html=True)
     st.image(f"images/Teams.jpg")
+    st.text("1. Annisa Fawwaz Putriano - 2023105471")
+    st.text("2. Michelle Hiu - 2023105488")
+    st.text("3. Maizan Jamalina Yahnah - 2023105496")
+    st.text("5. Najla Melinda Kiasati - 2023105534")
+    st.text("6. Carissa Metta Wahyudi - 2023105506")
+    st.text("7. Aulia Fasya - 2023105499")
+
