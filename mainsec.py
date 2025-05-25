@@ -4,55 +4,76 @@ import numpy as np
 from PIL import Image
 
 def skinTone_detector(image_data):
-    img = Image.open(image_data).convert("RGB")
-    img = img.resize((200, 200))
+    try:
+        img = Image.open(image_data).convert("RGB")
+        img = img.resize((200, 200))
 
-    # Mengambil ROI
-    width, height = img.size
-    left = width // 4
-    top = height // 4
-    right = left + width // 2
-    bottom = top + height // 2
-    cropped_img = img.crop((left, top, right, bottom))
+        # Mengambil ROI
+        width, height = img.size
+        left = width // 4
+        top = height // 4
+        right = left + width // 2
+        bottom = top + height // 2
+        cropped_img = img.crop((left, top, right, bottom))
 
-    # Konversi RGB ke HSV
-    cropped_arr = np.array(cropped_img) / 255.0
-    r, g, b = cropped_arr[:, :, 0], cropped_arr[:, :, 1], cropped_arr[:, :, 2]
-    cmax = np.max(cropped_arr, axis=2)
-    cmin = np.min(cropped_arr, axis=2)
-    d = cmax-cmin
+        # Konversi RGB ke HSV
+        cropped_arr = np.array(cropped_img) / 255.0
+        r, g, b = cropped_arr[:, :, 0], cropped_arr[:, :, 1], cropped_arr[:, :, 2]
+        cmax = np.max(cropped_arr, axis=2)
+        cmin = np.min(cropped_arr, axis=2)
+        d = cmax-cmin
 
-    hue = np.zeros_like(cmax)
-    with np.errstate(divide='ignore', invalid='ignore'):
-        mask_r = (cmax == r) & (d != 0)
-        mask_g = (cmax == g) & (d != 0) 
-        mask_b = (cmax == b) & (d != 0)
+        hue = np.zeros_like(cmax)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            mask_r = (cmax == r) & (d != 0)
+            mask_g = (cmax == g) & (d != 0) 
+            mask_b = (cmax == b) & (d != 0)
  
-        hue[mask_r] = (((g - b) / d) % 6)[mask_r]
-        hue[mask_g] = (((b - r) / d) + 2)[mask_g]
-        hue[mask_b] = (((r - g) / d) + 4)[mask_b]
+            hue[mask_r] = (((g - b) / d) % 6)[mask_r]
+            hue[mask_g] = (((b - r) / d) + 2)[mask_g]
+            hue[mask_b] = (((r - g) / d) + 4)[mask_b]
     
-    hue *= 60
-    hue = np.nan_to_num(hue)
+        hue *= 60
+        hue = np.nan_to_num(hue, nan=0.0, posinf=0.0, neginf=0.0)
 
-    saturation = np.where(cmax == 0, 0, d / cmax)
-    value = cmax
+        saturation = np.where(cmax == 0, 0, d / cmax)
+        value = cmax
 
-    avg_h = np.median(hue)
-    avg_s = np.median(saturation) * 255
-    avg_v = np.median(value) * 255
+        # filter hanya warna kulit
+        valid_mask = (
+            (hue >= 0) & (hue <= 50) & 
+            (saturation >= 0.1) & (saturation <= 0.8) & 
+            (value >= 0.2) & (value <= 1.0)
+        )
 
-    st.write(f"HSV rata-rata: H={avg_h:.2f}, S={avg_s:.2f}, V={avg_v:.2f}")
+        filtered_hue = hue[valid_mask]
+        filtered_saturation = saturation[valid_mask]
+        filtered_value = value[valid_mask]
 
-    if 0 <= avg_h <= 50 and 10 <= avg_s <= 60 and 80 <avg_v <= 255:
-        return "FAIR"
-    elif 10 <= avg_h <= 50 and 30 <= avg_s <= 90 and 70 <avg_v <= 240:
-        return "LIGHT"
-    elif 10 <= avg_h <= 40 and 50 <= avg_s <= 120 and 40 <avg_v <= 200:
-        return "MEDIUM"
-    elif 0 <= avg_h <= 30 and 60 <= avg_s <= 150 and 20 <avg_v <= 100:
-        return "DARK"
-    else:
+        # Jika data terlalu sedikit, fallback ke semua pixel
+        if len(filtered_hue) < 50:
+            filtered_hue = hue.flatten()
+            filtered_saturation = saturation.flatten()
+            filtered_value = value.flatten()
+
+        avg_h = np.median(filtered_hue)
+        avg_s = np.median(filtered_saturation) * 255
+        avg_v = np.median(filtered_value) * 255
+
+        st.write(f"HSV rata-rata: H={avg_h:.2f}, S={avg_s:.2f}, V={avg_v:.2f}")
+
+        if 0 <= avg_h <= 50 and 10 <= avg_s <= 60 and 80 <avg_v <= 255:
+            return "FAIR"
+        elif 10 <= avg_h <= 50 and 30 <= avg_s <= 90 and 70 <avg_v <= 240:
+            return "LIGHT"
+        elif 10 <= avg_h <= 40 and 50 <= avg_s <= 120 and 40 <avg_v <= 200:
+            return "MEDIUM"
+        elif 0 <= avg_h <= 30 and 60 <= avg_s <= 150 and 20 <avg_v <= 100:
+            return "DARK"
+        else:
+            return "An Unknown Skin Tone"
+    except Exception as e:
+        st.error(f"Terjadi Kesalahan saat Mendeteksi: {e}")
         return "An Unknown Skin Tone"
 
 st.markdown(
