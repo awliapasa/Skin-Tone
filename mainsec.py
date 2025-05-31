@@ -1,12 +1,61 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
+import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
+
+def detect_face(image):
+    """Deteksi wajah menggunakan Haar Cascade"""
+    img_np = np.array(image)
+    gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = face_cascade.detectMultiScale(
+        gray,
+        scaleFactor=1.05,
+        minNeighbors=5,
+        minSize=(100,100)
+    )
+    if len(faces) > 0:
+        return faces[0]
+    else:
+        return None
 
 def skinTone_detector(image_data):
     try:
         img = Image.open(image_data).convert("RGB")
-        img = img.resize((200, 200))
+        img_np = np.array(img)
+
+        # Deteksi wajah
+        face = detect_face(img)
+        if face is None:
+            st.warning("Tidak ada wajah terdeteksi!")
+            return "An Unknown Skin Tone"
+        
+        x, y, w, h = face
+        face_roi = np.array(img)[y:y+h, x:x+w]
+
+        # Konversi ke HSV dan analisis
+        hsv = cv2.cvtColor(face_roi, cv2.COLOR_RGB2HSV)
+
+        cheek_roi = hsv[int(h*0.2):int(h*0.6), int(w*0.25):int (w*0.75)]
+
+        lower_skin = np.array([0,30, 60], dtype=np.uint8)
+        upper_skin = np.array([25, 150, 255], dtype=np.uint8)
+        skin_mask = cv2.inRange(cheek_roi, lower_skin, upper_skin)
+
+        skin_pixels = cheek_roi[skin_mask > 0]
+        if len(skin_pixels) < 50:
+            st.warning("Area kulit terlalu sedikit, gunakan seluruh wajah")
+            skin_pixels = hsv.reshape(-1, 3)
+
+        avg_h, avg_s, avg_v = np.median(skin_pixels, axis=0)
+
+        st.write(f"""
+        **Analisis Warna Kulit:**
+        - Hue (Rona): {avg_h:.1f}°
+        - Saturation (Saturasi): {avg_s:.1f}%
+        - Value (Kecerahan): {avg_v:.1f}%
+        """)
 
         # Mengambil ROI
         width, height = img.size
@@ -156,34 +205,57 @@ if (selected=='Detector Site'):
     # halaman upload
     elif st.session_state.subpage == "upload":
         st.title('Please Upload your Photo')
-        st.button('<-- Back', on_click=go_back)
-        uploaded_file = st.file_uploader('Upload your photo', type=['jpg', 'png', 'jpeg'])
+        st.button('<-- Back', on_click=go_back, key='back_button_upload')
+        uploaded_file = st.file_uploader('Upload your photo', type=['jpg', 'png', 'jpeg'], help="Pastikan foto menunjukkan wajah dengan jelas!") 
+
         if uploaded_file is not None:
-            # Menampilkan gambar yang diupload
-            st.image(uploaded_file, caption='Uploaded Image', use_container_width=True)
-            st.write("")
-            st.write("Classifying...")
-            # Menampilkan hasil klasifikasi
-            st.session_state.result = skinTone_detector(uploaded_file)
-            st.button('See Result', on_click=go_to_result)
-    
+            img = Image.open(uploaded_file)
+            img_np = np.array(img)
+
+            face = detect_face(img)
+            if face is not None:
+                x, y, w, h = face
+                img_with_box = img_np.copy()
+                cv2.rectangle(img_with_box, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                img_with_box = cv2.cvtColor(img_with_box, cv2.COLOR_BGR2RGB)
+                draw = ImageDraw.Draw(img)
+                draw.rectangle([x, y, x+w, y+h], outline="green", width=3)
+                st.image(img_with_box, caption='Wajah Terdeteksi', use_container_width=True)
+                
+                if st.button('Analisis Skin Tone'):
+                    st.session_state.result = skinTone_detector(uploaded_file)
+                    go_to_result()
+            else: 
+                st.error("Wajah tidak terdeteksi. Upload foto dengan wajah jelas!")
+                             
     elif st.session_state.subpage == "take_photo":
         st.title('Please Take a Photo')
-        st.button('<-- Back', on_click=go_back)
+        st.button('<-- Back', on_click=go_back, key='back_button_camera')
         # Simulasi pengambilan foto
         picture = st.camera_input("Take a picture")
-        if picture is not None:
-            # Menampilkan gambar yang diambil
-            st.image(picture, caption='Captured Image', use_container_width=True)
-            st.write("")
-            st.write("Classifying...")
-            # Menampilkan hasil klasifikasi
-            st.session_state.result = skinTone_detector(picture)
-            st.button('See Result', on_click=go_to_result)
+        if picture:
+            if picture:
+                img = Image.open(picture)
+                img_np = np.array(img)
+
+                face_coords = detect_face(img)
+                if face_coords is not None:
+                    x, y, w, h = face_coords
+                    cv2.rectangle(img_np, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                    img_with_box = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
+                    draw = ImageDraw.Draw(img)
+                    draw.rectangle([x, y, x+w, y+h], outline="green", width=3)
+                    st.image(img_with_box, caption="Wajah Terdeteksi")
+
+                    if st.button('Analisis Skin Tone'):
+                        st.session_state.result = skinTone_detector(picture)
+                        go_to_result()
+                else:
+                    st.error("Wajah tidak terdeteksi. Pastikan wajah terlihat jelas!")
     
     # halaman hasil
     if st.session_state.subpage == "result":
-        st.button('<-- Back', on_click=go_back)
+        st.button('<-- Back', on_click=go_back, key='back_button_result')
         st.title('RESULT')
         st.text('Your skin tone is:')
         st.subheader(st.session_state.result)
