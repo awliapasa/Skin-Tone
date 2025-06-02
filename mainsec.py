@@ -1,13 +1,22 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
+from io import BytesIO
+import os
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
+def convert_color(image, from_format='RGB', to_format='BGR'):
+    if from_format == 'RGB' and to_format == 'BGR':
+        return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    elif from_format == 'BGR' and to_format == 'RGB':
+        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return image
+
 def detect_face(image):
     """Deteksi wajah menggunakan Haar Cascade"""
     img_np = np.array(image)
-    gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+    gray = cv2.cvtColor(convert_color(img_np, 'RGB', 'BGR'), cv2.COLOR_BGR2GRAY)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     faces = face_cascade.detectMultiScale(
         gray,
@@ -22,8 +31,14 @@ def detect_face(image):
 
 def skinTone_detector(image_data):
     try:
-        img = Image.open(image_data).convert("RGB")
+        if isinstance(image_data, (str, os.PathLike)):
+            img = Image.open(image_data).convert("RGB")
+        else:
+            img = Image.open(image_data).convert("RGB")
+
         img_np = np.array(img)
+
+        st.image(img, caption="Input Gambar", use_container_width=True)
 
         # Deteksi wajah
         face = detect_face(img)
@@ -125,6 +140,26 @@ def skinTone_detector(image_data):
         st.error(f"Terjadi Kesalahan saat Mendeteksi: {e}")
         return "An Unknown Skin Tone"
 
+def handle_image_upload(uploaded_file):
+    """Handle semua format gambar dengan optimal"""
+    img = Image.open(uploaded_file)
+
+    if img.mode in ('RGBA', 'LA'):
+        background = Image.new('RGB', img.size, (255, 255, 255))
+        background.paste(img, mask=img.split()[-1])
+        img = background
+    
+    elif img.mode == 'RGB':
+        pass
+
+    img_np = np.array(img)
+
+    if img_np.shape[0] < 300 or img_np.shape[1] < 300:
+        st.warning("Resolusi gambar terlalu rendah! Tolong upload gambar lebih besar")
+        return None
+    
+    return img_np
+
 st.markdown(
     """
     <style>
@@ -210,6 +245,18 @@ if (selected=='Detector Site'):
 
         if uploaded_file is not None:
             img = Image.open(uploaded_file)
+
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            buffered = BytesIO()
+            if uploaded_file.type in ['image/png', 'image/PNG']:
+                img.save(buffered, format="PNG")
+            else:
+                img.save(buffered, format="JPEG", quality=95)
+
+            buffered.seek(0)
+            img = Image.open(buffered)
             img_np = np.array(img)
 
             face = detect_face(img)
@@ -217,10 +264,10 @@ if (selected=='Detector Site'):
                 x, y, w, h = face
                 img_with_box = img_np.copy()
                 cv2.rectangle(img_with_box, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                img_with_box = cv2.cvtColor(img_with_box, cv2.COLOR_BGR2RGB)
+                img_with_box = convert_color(img_with_box, 'RGB', 'BGR')
                 draw = ImageDraw.Draw(img)
                 draw.rectangle([x, y, x+w, y+h], outline="green", width=3)
-                st.image(img_with_box, caption='Wajah Terdeteksi', use_container_width=True)
+                st.image(convert_color(img_with_box, 'BGR', 'RGB'), caption='Wajah Terdeteksi', use_container_width=True, clamp=True, output_format="JPEG")
                 
                 if st.button('Analisis Skin Tone'):
                     st.session_state.result = skinTone_detector(uploaded_file)
@@ -238,14 +285,17 @@ if (selected=='Detector Site'):
                 img = Image.open(picture)
                 img_np = np.array(img)
 
+                img_bgr = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+
                 face_coords = detect_face(img)
                 if face_coords is not None:
                     x, y, w, h = face_coords
-                    cv2.rectangle(img_np, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                    img_with_box = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
+                    img_with_box = img_bgr.copy()
+                    cv2.rectangle(img_with_box, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                    img_with_box_rgb = cv2.cvtColor(img_with_box, cv2.COLOR_BGR2RGB)
                     draw = ImageDraw.Draw(img)
                     draw.rectangle([x, y, x+w, y+h], outline="green", width=3)
-                    st.image(img_with_box, caption="Wajah Terdeteksi")
+                    st.image(img_with_box_rgb, caption="Wajah Terdeteksi", use_container_width=True)
 
                     if st.button('Analisis Skin Tone'):
                         st.session_state.result = skinTone_detector(picture)
