@@ -99,25 +99,6 @@ def skinTone_detector(image_data):
         st.error(f"Terjadi Kesalahan saat Mendeteksi: {e}")
         return "An Unknown Skin Tone"
 
-def handle_image_upload(uploaded_file):
-    """Handle semua format gambar dengan optimal"""
-    img = Image.open(uploaded_file)
-
-    if img.mode in ('RGBA', 'LA'):
-        background = Image.new('RGB', img.size, (255, 255, 255))
-        background.paste(img, mask=img.split()[-1])
-        img = background
-    
-    elif img.mode == 'RGB':
-        pass
-
-    img_np = np.array(img)
-
-    if img_np.shape[0] < 300 or img_np.shape[1] < 300:
-        st.warning("Resolusi gambar terlalu rendah! Tolong upload gambar lebih besar")
-        return None
-    
-    return img_np
 
 st.markdown(
     """
