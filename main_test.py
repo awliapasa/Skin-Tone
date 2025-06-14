@@ -31,46 +31,59 @@ def detect_face(image):
 
 def skinTone_detector(image_data):
     try:
-        if isinstance(image_data, (str, os.PathLike)):
-            img = Image.open(image_data).convert("RGB")
-        else:
-            img = Image.open(image_data).convert("RGB")
+        # Mengambil ROI
+        width, height = img.size
+        left = width // 4
+        top = height // 4
+        right = left + width // 2
+        bottom = top + height // 2
+        cropped_img = img.crop((left, top, right, bottom))
 
-        img_np = np.array(img)
+        # Konversi RGB ke HSV
+        cropped_arr = np.array(cropped_img) / 255.0
+        r, g, b = cropped_arr[:, :, 0], cropped_arr[:, :, 1], cropped_arr[:, :, 2]
+        cmax = np.max(cropped_arr, axis=2)
+        cmin = np.min(cropped_arr, axis=2)
+        d = cmax-cmin
 
-        st.image(img, caption="Input Gambar", use_container_width=True)
+        hue = np.zeros_like(cmax)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            mask_r = (cmax == r) & (d != 0)
+            mask_g = (cmax == g) & (d != 0) 
+            mask_b = (cmax == b) & (d != 0)
+ 
+            hue[mask_r] = (((g - b) / d) % 6)[mask_r]
+            hue[mask_g] = (((b - r) / d) + 2)[mask_g]
+            hue[mask_b] = (((r - g) / d) + 4)[mask_b]
+    
+        hue *= 60
+        hue = np.nan_to_num(hue, nan=0.0, posinf=0.0, neginf=0.0)
 
-        # Deteksi wajah
-        face = detect_face(img)
-        if face is None:
-            st.warning("Tidak ada wajah terdeteksi!")
-            return "An Unknown Skin Tone"
-        
-        x, y, w, h = face
-        face_roi = np.array(img)[y:y+h, x:x+w]
+        saturation = np.where(cmax == 0, 0, d / cmax)
+        value = cmax
 
-        # Konversi ke HSV dan analisis
-        hsv = cv2.cvtColor(face_roi, cv2.COLOR_RGB2HSV)
+        # filter hanya warna kulit
+        valid_mask = (
+            (hue >= 0) & (hue <= 50) & 
+            (saturation >= 0.1) & (saturation <= 0.8) & 
+            (value >= 0.2) & (value <= 1.0)
+        )
 
-        cheek_roi = hsv[int(h*0.2):int(h*0.6), int(w*0.25):int (w*0.75)]
+        filtered_hue = hue[valid_mask]
+        filtered_saturation = saturation[valid_mask]
+        filtered_value = value[valid_mask]
 
-        lower_skin = np.array([0,30, 60], dtype=np.uint8)
-        upper_skin = np.array([25, 150, 255], dtype=np.uint8)
-        skin_mask = cv2.inRange(cheek_roi, lower_skin, upper_skin)
+        # Jika data terlalu sedikit, fallback ke semua pixel
+        if len(filtered_hue) < 50:
+            filtered_hue = hue.flatten()
+            filtered_saturation = saturation.flatten()
+            filtered_value = value.flatten()
 
-        skin_pixels = cheek_roi[skin_mask > 0]
-        if len(skin_pixels) < 50:
-            st.warning("Area kulit terlalu sedikit, gunakan seluruh wajah")
-            skin_pixels = hsv.reshape(-1, 3)
+        avg_h = np.median(filtered_hue)
+        avg_s = np.median(filtered_saturation) * 255
+        avg_v = np.median(filtered_value) * 255
 
-        avg_h, avg_s, avg_v = np.median(skin_pixels, axis=0)
-
-        st.write(f"""
-        **Analisis Warna Kulit:**
-        - Hue (Rona): {avg_h:.1f}°
-        - Saturation (Saturasi): {avg_s:.1f}%
-        - Value (Kecerahan): {avg_v:.1f}%
-        """)
+        st.write(f"HSV rata-rata: H={avg_h:.2f}, S={avg_s:.2f}, V={avg_v:.2f}")
 
         if 0 <= avg_h <= 50 and 10 <= avg_s <= 60 and 80 <avg_v <= 255:
             return "FAIR"
@@ -85,6 +98,26 @@ def skinTone_detector(image_data):
     except Exception as e:
         st.error(f"Terjadi Kesalahan saat Mendeteksi: {e}")
         return "An Unknown Skin Tone"
+
+def handle_image_upload(uploaded_file):
+    """Handle semua format gambar dengan optimal"""
+    img = Image.open(uploaded_file)
+
+    if img.mode in ('RGBA', 'LA'):
+        background = Image.new('RGB', img.size, (255, 255, 255))
+        background.paste(img, mask=img.split()[-1])
+        img = background
+    
+    elif img.mode == 'RGB':
+        pass
+
+    img_np = np.array(img)
+
+    if img_np.shape[0] < 300 or img_np.shape[1] < 300:
+        st.warning("Resolusi gambar terlalu rendah! Tolong upload gambar lebih besar")
+        return None
+    
+    return img_np
 
 st.markdown(
     """
