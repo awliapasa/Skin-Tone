@@ -31,47 +31,6 @@ def detect_face(image):
 
 def skinTone_detector(image_data):
     try:
-        if isinstance(image_data, (str, os.PathLike)):
-            img = Image.open(image_data).convert("RGB")
-        else:
-            img = Image.open(image_data).convert("RGB")
-
-        img_np = np.array(img)
-
-        st.image(img, caption="Input Gambar", use_container_width=True)
-
-        # Deteksi wajah
-        face = detect_face(img)
-        if face is None:
-            st.warning("Tidak ada wajah terdeteksi!")
-            return "An Unknown Skin Tone"
-        
-        x, y, w, h = face
-        face_roi = np.array(img)[y:y+h, x:x+w]
-
-        # Konversi ke HSV dan analisis
-        hsv = cv2.cvtColor(face_roi, cv2.COLOR_RGB2HSV)
-
-        cheek_roi = hsv[int(h*0.2):int(h*0.6), int(w*0.25):int (w*0.75)]
-
-        lower_skin = np.array([0,30, 60], dtype=np.uint8)
-        upper_skin = np.array([25, 150, 255], dtype=np.uint8)
-        skin_mask = cv2.inRange(cheek_roi, lower_skin, upper_skin)
-
-        skin_pixels = cheek_roi[skin_mask > 0]
-        if len(skin_pixels) < 50:
-            st.warning("Area kulit terlalu sedikit, gunakan seluruh wajah")
-            skin_pixels = hsv.reshape(-1, 3)
-
-        avg_h, avg_s, avg_v = np.median(skin_pixels, axis=0)
-
-        st.write(f"""
-        **Analisis Warna Kulit:**
-        - Hue (Rona): {avg_h:.1f}°
-        - Saturation (Saturasi): {avg_s:.1f}%
-        - Value (Kecerahan): {avg_v:.1f}%
-        """)
-
         # Mengambil ROI
         width, height = img.size
         left = width // 4
@@ -140,25 +99,6 @@ def skinTone_detector(image_data):
         st.error(f"Terjadi Kesalahan saat Mendeteksi: {e}")
         return "An Unknown Skin Tone"
 
-def handle_image_upload(uploaded_file):
-    """Handle semua format gambar dengan optimal"""
-    img = Image.open(uploaded_file)
-
-    if img.mode in ('RGBA', 'LA'):
-        background = Image.new('RGB', img.size, (255, 255, 255))
-        background.paste(img, mask=img.split()[-1])
-        img = background
-    
-    elif img.mode == 'RGB':
-        pass
-
-    img_np = np.array(img)
-
-    if img_np.shape[0] < 300 or img_np.shape[1] < 300:
-        st.warning("Resolusi gambar terlalu rendah! Tolong upload gambar lebih besar")
-        return None
-    
-    return img_np
 
 st.markdown(
     """
@@ -333,4 +273,3 @@ if (selected == 'Developers Profile'):
     st.text("5. Najla Melinda Kiasati - 2023105534")
     st.text("6. Carissa Metta Wahyudi - 2023105506")
     st.text("7. Aulia Fasya - 2023105499")
-
