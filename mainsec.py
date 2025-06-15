@@ -1,7 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 from io import BytesIO
-import os
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
