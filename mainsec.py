@@ -21,7 +21,7 @@ def detect_face(image):
         gray,
         scaleFactor=1.05,
         minNeighbors=5,
-        minSize=(100,100)
+        minSize=(25,25)
     )
     if len(faces) > 0:
         return faces[0]
