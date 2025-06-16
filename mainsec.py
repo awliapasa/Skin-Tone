@@ -25,7 +25,7 @@ def detect_face(image):
     )
     if len(faces) > 0:
         print(len(faces))
-        return faces[0]
+        return faces[1]
     else:
         return None
 
