@@ -24,7 +24,8 @@ def detect_face(image):
         minSize=(25,25)
     )
     if len(faces) > 0:
-        return faces[1]
+        print(len(faces))
+        return faces[2]
     else:
         return None
 
