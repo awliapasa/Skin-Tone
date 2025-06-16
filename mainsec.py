@@ -39,33 +39,18 @@ def skinTone_detector(image_data):
         cropped_img = img.crop((left, top, right, bottom))
 
         # Konversi RGB ke HSV
-        cropped_arr = np.array(cropped_img) / 255.0
-        r, g, b = cropped_arr[:, :, 0], cropped_arr[:, :, 1], cropped_arr[:, :, 2]
-        cmax = np.max(cropped_arr, axis=2)
-        cmin = np.min(cropped_arr, axis=2)
-        d = cmax-cmin
-
-        hue = np.zeros_like(cmax)
-        with np.errstate(divide='ignore', invalid='ignore'):
-            mask_r = (cmax == r) & (d != 0)
-            mask_g = (cmax == g) & (d != 0) 
-            mask_b = (cmax == b) & (d != 0)
- 
-            hue[mask_r] = (((g - b) / d) % 6)[mask_r]
-            hue[mask_g] = (((b - r) / d) + 2)[mask_g]
-            hue[mask_b] = (((r - g) / d) + 4)[mask_b]
-    
-        hue *= 60
-        hue = np.nan_to_num(hue, nan=0.0, posinf=0.0, neginf=0.0)
-
-        saturation = np.where(cmax == 0, 0, d / cmax)
-        value = cmax
+        cropped_arr = np.array(cropped_img)
+        hsv = cv2.cvtColor(cropped_arr, cv2.COLOR_RGB2HSV)
+        
+        hue = hsv[:, :, 0] * 2 # supaya jadi 0-360
+        saturation = hsv[:, :, 1]
+        value = hsv[:, :, 2]
 
         # filter hanya warna kulit
         valid_mask = (
             (hue >= 0) & (hue <= 50) & 
-            (saturation >= 0.1) & (saturation <= 0.8) & 
-            (value >= 0.2) & (value <= 1.0)
+            (saturation >= 25) & (saturation <= 204) & 
+            (value >= 51) & (value <= 255)
         )
 
         filtered_hue = hue[valid_mask]
@@ -79,8 +64,8 @@ def skinTone_detector(image_data):
             filtered_value = value.flatten()
 
         avg_h = np.median(filtered_hue)
-        avg_s = np.median(filtered_saturation) * 255
-        avg_v = np.median(filtered_value) * 255
+        avg_s = np.median(filtered_saturation)
+        avg_v = np.median(filtered_value)
 
         st.write(f"HSV rata-rata: H={avg_h:.2f}, S={avg_s:.2f}, V={avg_v:.2f}")
 
