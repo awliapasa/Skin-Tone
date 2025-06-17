@@ -24,34 +24,40 @@ def detect_face(image):
         minSize=(25,25)
     )
     if len(faces) > 0:
-        print(len(faces))
         return faces[0]
     else:
         return None
 
-def skinTone_detector(image_data):
+def skinTone_detector(image, face_coords=None):
     try:
-        # Mengambil ROI
-        width, height = img.size
-        left = width // 4
-        top = height // 4
-        right = left + width // 2
-        bottom = top + height // 2
-        cropped_img = img.crop((left, top, right, bottom))
+        # deteksi wajah
+        if face_coords is None:
+            st.error("Wajah tidak terdeteksi. Pastikan foto menunjukkan wajah dengan jelas!")
+            return None
 
-        # Konversi RGB ke HSV
-        cropped_arr = np.array(cropped_img)
-        hsv = cv2.cvtColor(cropped_arr, cv2.COLOR_RGB2HSV)
-        
-        hue = hsv[:, :, 0] * 2 # supaya jadi 0-360
-        saturation = hsv[:, :, 1]
-        value = hsv[:, :, 2]
+        # Crop wajah dari gambar asli
+        x, y, w, h = face_coords
+        img_np = np.array(image)
+        face_roi = img_np[y+h//5:y+h*4//5, x+w//5:x+w*4//5]
+
+        # Pastikan tipe data benar
+        face_used = np.asarray(face_roi, dtype=np.uint8)
+
+        # Konversi ke RGB
+        hsv = cv2.cvtColor(face_used, cv2.COLOR_RGB2HSV)
+        hue, saturation, value = hsv[..., 0]*2, hsv[..., 1], hsv[...,2]
+
+        # Optimasi deteksi wajah
+        skin_pixels = (0 <= hue) & (hue <= 50) & (10 <= saturation) & (saturation <= 200) & (40 <= value)
+        h_skin = hue[skin_pixels] if skin_pixels.any() else hue.flatten()
+        s_skin = saturation[skin_pixels] if skin_pixels.any() else saturation.flatten()
+        v_skin = value[skin_pixels] if skin_pixels.any() else value.flatten()
 
         # filter hanya warna kulit
         valid_mask = (
             (hue >= 0) & (hue <= 50) & 
-            (saturation >= 25) & (saturation <= 204) & 
-            (value >= 51) & (value <= 255)
+            (saturation >= 10) & (saturation <= 150) & 
+            (value >= 20) & (value <= 255)
         )
 
         filtered_hue = hue[valid_mask]
@@ -66,17 +72,17 @@ def skinTone_detector(image_data):
 
         avg_h = np.median(filtered_hue)
         avg_s = np.median(filtered_saturation)
-        avg_v = np.median(filtered_value)
+        avg_v = np.median(filtered_value) 
 
         st.write(f"HSV rata-rata: H={avg_h:.2f}, S={avg_s:.2f}, V={avg_v:.2f}")
 
-        if 0 <= avg_h <= 50 and 10 <= avg_s <= 60 and 80 <avg_v <= 255:
+        if 0 <= avg_h <= 15 and 10 <= avg_s <= 80 and 190 <avg_v <= 255:
             return "FAIR"
-        elif 10 <= avg_h <= 50 and 30 <= avg_s <= 90 and 70 <avg_v <= 240:
+        elif 10 <= avg_h <= 20 and 30 <= avg_s <= 100 and 160 <avg_v <= 220:
             return "LIGHT"
-        elif 10 <= avg_h <= 40 and 50 <= avg_s <= 120 and 40 <avg_v <= 200:
+        elif 15 <= avg_h <= 25 and 60 <= avg_s <= 140 and 110 <avg_v <= 180:
             return "MEDIUM"
-        elif 0 <= avg_h <= 30 and 60 <= avg_s <= 150 and 20 <avg_v <= 100:
+        elif 0 <= avg_h <= 20 and 90 <= avg_s <= 200 and 40 <avg_v <= 110:
             return "DARK"
         else:
             return "An Unknown Skin Tone"
@@ -195,7 +201,7 @@ if (selected=='Detector Site'):
                 st.image(convert_color(img_with_box, 'BGR', 'RGB'), caption='Wajah Terdeteksi', use_container_width=True, clamp=True, output_format="JPEG")
                 
                 if st.button('Analisis Skin Tone'):
-                    st.session_state.result = skinTone_detector(uploaded_file)
+                    st.session_state.result = skinTone_detector(img, face)
                     go_to_result()
             else: 
                 st.error("Wajah tidak terdeteksi. Upload foto dengan wajah jelas!")
@@ -223,7 +229,7 @@ if (selected=='Detector Site'):
                     st.image(img_with_box_rgb, caption="Wajah Terdeteksi", use_container_width=True)
 
                     if st.button('Analisis Skin Tone'):
-                        st.session_state.result = skinTone_detector(picture)
+                        st.session_state.result = skinTone_detector(img, face_coords)
                         go_to_result()
                 else:
                     st.error("Wajah tidak terdeteksi. Pastikan wajah terlihat jelas!")
