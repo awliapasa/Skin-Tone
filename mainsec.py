@@ -16,15 +16,16 @@ def detect_face(image):
     """Deteksi wajah menggunakan Haar Cascade"""
     img_np = np.array(image)
     gray = cv2.cvtColor(convert_color(img_np, 'RGB', 'BGR'), cv2.COLOR_BGR2GRAY)
+    h_img, w_img = gray.shape
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     faces = face_cascade.detectMultiScale(
         gray,
         scaleFactor=1.05,
-        minNeighbors=5,
-        minSize=(25,25)
+        minNeighbors=8,
+        minSize=(w_img // 8, h_img // 8)
     )
     if len(faces) > 0:
-        return faces[0]
+        return max(faces, key=lambda f: f[2] * f[3])  # f = (x, y, w, h)
     else:
         return None
 
