@@ -98,7 +98,7 @@ st.markdown(
     .stApp {
         background-color: #FFF1F2;
     }
-    h1, h2, h3, h4, h5, h6, p, div {
+    h1, h2, h3, h4, h5, h6, p, div, [data-testid="stText"], [data-testid="stText"] * {
         color: #1B1E2E !important;
     }
     button {
