@@ -2,24 +2,27 @@
 
 ## Overview
 
-Skin Tone Detector adalah aplikasi web berbasis Streamlit yang mendeteksi wajah dari foto (upload atau kamera), lalu menganalisis warna kulit untuk mengklasifikasikannya ke dalam salah satu dari empat kategori — **Fair**, **Light**, **Medium**, atau **Dark** — berdasarkan nilai HSV dari area wajah yang terdeteksi. Berdasarkan hasil klasifikasi, aplikasi menampilkan rekomendasi produk makeup (blush, foundation, lipstick) yang sesuai dengan skin tone tersebut.
+Skin Tone Detector is a Streamlit-based web app that detects faces from a photo (upload or camera), then analyzes skin color to classify it into one of four categories — **Fair**, **Light**, **Medium**, or **Dark** — based on the HSV values of the detected face area. Based on the result, the app shows makeup product recommendations (blush, foundation, lipstick) that match the skin tone.
+
+## Live URL
+https://skin-tone-app.streamlit.app/
 
 ## Features
 
-- **Deskripsi Skin Tone** — halaman informasi yang menjelaskan karakteristik masing-masing kategori skin tone (Fair, Light, Medium, Dark).
-- **Deteksi via Upload Foto** — upload foto (jpg/png/jpeg), sistem mendeteksi wajah dan menampilkan bounding box sebelum dianalisis.
-- **Deteksi via Kamera** — ambil foto langsung dari kamera device untuk dianalisis secara real-time.
-- **Klasifikasi Skin Tone** — analisis warna kulit menggunakan deteksi wajah (Haar Cascade) dan perhitungan median HSV pada area wajah.
-- **Rekomendasi Produk** — menampilkan rekomendasi blush, foundation, dan lipstick berdasarkan hasil klasifikasi skin tone.
-- **Profil Developer** — halaman yang menampilkan daftar anggota tim pengembang.
+- **Skin Tone Description** — an information page explaining the characteristics of each skin tone category (Fair, Light, Medium, Dark).
+- **Detection via Photo Upload** — upload a photo (jpg/png/jpeg); the system detects the face and shows a bounding box before analysis.
+- **Detection via Camera** — take a photo directly from your device camera for real-time analysis.
+- **Skin Tone Classification** — skin color analysis using face detection (Haar Cascade) and the median HSV value of the face area.
+- **Product Recommendations** — shows blush, foundation, and lipstick recommendations based on the classified skin tone.
+- **Developer Profile** — a page listing the members of the development team.
 
 ## Tech Stack
 
-- **[Streamlit](https://streamlit.io/)** — framework untuk membangun antarmuka web aplikasi.
-- **[streamlit-option-menu](https://pypi.org/project/streamlit-option-menu/)** — komponen navigasi sidebar.
-- **[OpenCV](https://opencv.org/)** (`opencv-python-headless`) — deteksi wajah (Haar Cascade) dan konversi ruang warna (RGB/BGR/HSV).
-- **[NumPy](https://numpy.org/)** — operasi array/matriks untuk pemrosesan pixel gambar.
-- **[Pillow (PIL)](https://python-pillow.org/)** — pemrosesan dan manipulasi gambar (buka, convert, gambar bounding box).
+- **[Streamlit](https://streamlit.io/)** — framework for building the app's web interface and deployement.
+- **[streamlit-option-menu](https://pypi.org/project/streamlit-option-menu/)** — sidebar navigation component.
+- **[OpenCV](https://opencv.org/)** (`opencv-python-headless`) — face detection (Haar Cascade) and color space conversion (RGB/BGR/HSV).
+- **[NumPy](https://numpy.org/)** — array/matrix operations for image pixel processing.
+- **[Pillow (PIL)](https://python-pillow.org/)** — image processing and manipulation (open, convert, draw bounding box).
 - **Python** 3.x
 
 ## Project Structure
@@ -32,20 +35,20 @@ Skin-Tone/
 │   ├── LIGHT/{Blush,Foundation,Lipstick}/*.png
 │   ├── MEDIUM/{Blush,Foundation,Lipstick}/*.png
 │   └── Teams.jpg
-├── mainsec.py          # entry point aplikasi
-├── main_test.py         # file eksperimen (belum stabil, jangan dijalankan)
+├── mainsec.py          # application entry point
+├── main_test.py         # experimental file (unstable, do not run)
 └── requirements.txt
 ```
 
 ## Run in Dev
 
-1. **Clone repository & masuk ke folder project**
+1. **Clone the repository and enter the project folder**
    ```bash
    git clone <repo-url>
    cd Skin-Tone
    ```
 
-2. **Buat virtual environment** (disarankan)
+2. **Create a virtual environment** (recommended)
    ```powershell
    python -m venv venv
    .\venv\Scripts\Activate.ps1
@@ -56,14 +59,14 @@ Skin-Tone/
    pip install -r requirements.txt
    ```
 
-4. **Jalankan aplikasi**
+4. **Run the app**
    ```powershell
    streamlit run mainsec.py
    ```
 
-   Aplikasi akan otomatis terbuka di browser pada `http://localhost:8501`.
+   The app opens automatically in your browser at `http://localhost:8501`.
 
-### Catatan
+### Notes
 
-- `main_test.py` adalah file eksperimen terpisah dan tidak perlu dijalankan — gunakan `mainsec.py` sebagai entry point utama.
-- Jika mengalami error `AttributeError: module 'cv2' has no attribute 'CascadeClassifier'`, pastikan versi `opencv-python-headless` yang terinstall adalah versi 4.x (bukan 5.x), karena OpenCV 5.x mengubah layout binding Python-nya.
+- `main_test.py` is a separate experimental file and does not need to be run — use `mainsec.py` as the main entry point.
+- If you get the error `AttributeError: module 'cv2' has no attribute 'CascadeClassifier'`, make sure the installed `opencv-python-headless` version is 4.x (not 5.x), because OpenCV 5.x changed its Python binding layout.
